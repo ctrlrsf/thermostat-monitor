@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+#
+# Grab thermostat data from Honeywell website
+#
+# Based on code from https://github.com/nottings/python-honeywell-thermostat/
+#
+
+import json
+import urllib
+import datetime
+import os
+import time
+import re
+import time
+import httplib
+import requests
+
+
+# Login information for Total Connect Comfort web site
+USERNAME=os.environ["HW_USERNAME"]
+PASSWORD=os.environ["HW_PASSWORD"]
+DEVICE_ID=""#device id can be obtained by viewing source after logging in to total connect comfort page
+# it should also be the last part of the URI when visiting the remote control of your thermostat online
+
+AUTH="https://rs.alarmnet.com/TotalConnectComfort/"
+
+def get_data():
+
+    retries=5
+    auth={
+        'timeOffset': 240,
+        'UserName': USERNAME,
+        'Password': PASSWORD,
+        'RememberMe': 'false'
+    }
+    headers={
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:31.0) Gecko/20100101 Firefox/31.0',
+        'Host': 'rs.alarmnet.com',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'https://rs.alarmnet.com/TotalConnectComfort'
+    }
+    headers2 = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:31.0) Gecko/20100101 Firefox/31.0',
+        'Host': 'rs.alarmnet.com',
+        'Referer': 'https://rs.alarmnet.com/TotalConnectComfort/Device/Control/'+DEVICE_ID,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.5'
+    }
+    s = requests.Session()
+    t = datetime.datetime.now()
+    utc_seconds = (time.mktime(t.timetuple()))
+    utc_seconds = int(utc_seconds*1000)
+
+    # Login
+    r = s.post('https://mytotalconnectcomfort.com/portal/', params=auth, headers=headers)
+    r.raise_for_status()
+    data_regex = re.compile(r'Control\.Model\.set\(Control\.Model\.Property\.(.*),\ (.*)\);')
+    matches = data_regex.findall(r.content.strip())
+    data = {'latestData': {'uiData': {}}}
+    for x in matches:
+        data['latestData']['uiData'][x[0]] = x[1].strip("'")
+    return data
+
+d = get_data()
+print "Data returned: ", d
