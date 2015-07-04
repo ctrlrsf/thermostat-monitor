@@ -25,3 +25,6 @@ _testmain.go
 
 # Ignore virtualenv directory
 venv
+
+# Ignore config file
+config.env
