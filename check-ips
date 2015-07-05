@@ -1,61 +1,55 @@
-#! /usr/bin/env bash
+#! /usr/bin/env python
+
+import os
+import subprocess
+import sys
 
 
-set -o errexit
-set -o nounset
+def check_if_online(host):
+  print("Checking if host is online: {}".format(host))
+  with open(os.devnull) as dev_null:
+    cmd="ping -c 1 -t 1 {}".format(host).split()
+    ret_code=subprocess.call(cmd, stdout=dev_null)
+    if ret_code == 0:
+      return True
+    else:
+      return False
 
-declare -r PING_CMD=$(type -fp ping)
-declare -r PING_ARGS=("-c" "1" "-t" "1")
+def set_host_status(host, status):
+  host_status_file=os.path.join(os.environ['STATUS_DIR'], host)
 
+  with open(host_status_file, 'w') as f:
+    f.write(status)
 
-# Set host status to online
-# $1 - ip address
-host_is_online() {
-  local ip=$1; shift
-  echo "online" > ${STATUS_DIR}/$ip
-}
+def make_status_dir():
+  status_dir=os.environ['STATUS_DIR']
 
-# Set host status to offline
-# $1 - ip address
-host_is_offline() {
-  local ip=$1; shift
+  if not os.path.isdir(status_dir):
+    print("Status directory doesn't exist, creating: {}".format(status_dir))
+    os.makedirs(status_dir)
 
-  echo "offline" > ${STATUS_DIR}/$ip
-}
+def main():
+  try:
+    status_dir=os.environ["STATUS_DIR"].split()
+  except KeyError:
+    print("STATUS_DIR env var required")
+    sys.exit(1)
 
-#
-# Globals:
-#   IPS_TO_CHECK
-#   DATA_DIR
-#   STATUS_DIR
-main() {
-  if [[ -z ${IPS_TO_CHECK:-} ]]; then
-    echo "IPS_TO_CHECK env var must be set"
-    exit 1
-  fi
+  try:
+    hosts_to_check=os.environ["HOSTS_TO_CHECK"].split()
+  except KeyError:
+    print("HOST_TO_CHECK env var required")
+    sys.exit(1)
 
-  if [[ -z ${DATA_DIR:-} ]]; then
-    echo "DATA_DIR env var must be set"
-    exit 1
-  fi
+  make_status_dir()
 
-  declare -r STATUS_DIR="${DATA_DIR}/status/"
+  for host in hosts_to_check:
+    online_result=check_if_online(host)
+    print("Result: {}".format(online_result))
 
-  # Make sure our status directory exists
-  mkdir -p ${STATUS_DIR}
+    if online_result:
+      set_host_status(host, "online")
+    else:
+      set_host_status(host, "offline")
 
-  for ip in ${IPS_TO_CHECK}; do
-    ping="notstarted or timeout"
-    echo "Checking if IP $ip responds."
-    ${PING_CMD} ${PING_ARGS[@]} $ip >> /dev/null && ping="pong"
-    if [[ ${ping} == "pong" ]]; then
-      echo "pong"
-      host_is_online $ip
-    else
-      echo "timeout"
-      host_is_offline $ip
-    fi
-  done
-}
-
-main "$@"
+main()
