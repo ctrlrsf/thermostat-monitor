@@ -28,6 +28,21 @@ def make_status_dir():
     print("Status directory doesn't exist, creating: {}".format(status_dir))
     os.makedirs(status_dir)
 
+def is_anybody_home(hosts_to_check):
+  any_online=False
+
+  for host in hosts_to_check:
+    online_result=check_if_online(host)
+    print("Result: {}".format(online_result))
+
+    if online_result:
+      set_host_status(host, "online")
+      any_online=True
+    else:
+      set_host_status(host, "offline")
+
+  return any_online
+
 def main():
   try:
     status_dir=os.environ["STATUS_DIR"].split()
@@ -43,13 +58,7 @@ def main():
 
   make_status_dir()
 
-  for host in hosts_to_check:
-    online_result=check_if_online(host)
-    print("Result: {}".format(online_result))
-
-    if online_result:
-      set_host_status(host, "online")
-    else:
-      set_host_status(host, "offline")
+  anybody_home=is_anybody_home(hosts_to_check)
+  print("Is anybody home? {}".format(anybody_home))
 
 main()
