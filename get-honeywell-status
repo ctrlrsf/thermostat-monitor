@@ -24,7 +24,7 @@ DEVICE_ID=""#device id can be obtained by viewing source after logging in to tot
 
 AUTH="https://rs.alarmnet.com/TotalConnectComfort/"
 
-def get_data():
+def get_tcc_data():
   retries=5
   auth={
     'timeOffset': 240,
@@ -63,5 +63,5 @@ def get_data():
   return data
 
 if __name__ == "__main__":
-  d = get_data()
+  d = get_tcc_data()
   print "Data returned: ", d
