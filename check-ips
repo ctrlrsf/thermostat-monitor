@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 
-def check_if_online(host):
+def ping_host(host):
   print("Checking if host is online: {}".format(host))
   with open(os.devnull) as dev_null:
     cmd="ping -c 1 -t 1 {}".format(host).split()
@@ -32,10 +32,10 @@ def is_anybody_home(hosts_to_check):
   any_online=False
 
   for host in hosts_to_check:
-    online_result=check_if_online(host)
-    print("Result: {}".format(online_result))
+    ping_result=ping_host(host)
+    print("Result: {}".format(ping_result))
 
-    if online_result:
+    if ping_result:
       set_host_status(host, "online")
       any_online=True
     else:
